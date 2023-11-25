@@ -1,3 +1,4 @@
 try.py
 __pycache__/
 .pytest_cache
+*.html

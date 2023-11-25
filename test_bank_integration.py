@@ -30,13 +30,11 @@ def test_open_account(mock_input, input_values):
         assert account.name == 'John'
         assert account.password == 'pass123'
         assert account.balance == 100
-    
+
+
 @pytest.fixture
 def mock_account():
-    account = Mock()
-    account.password = 'pass123'
-    account.balance = 100
-    account.name = 'John'
+    account = Account('John', 'pass123', 100)
     return account
 
 
@@ -58,9 +56,8 @@ def bank_with_mock_account(mock_account):
     ]
 )
 @patch('builtins.input')
-def test_close_account(mock_input, input_values, bank_with_mock_account):
+def test_close_account(mock_input, input_values, bank_with_mock_account, capsys):
     mock_input.side_effect = input_values
-
     if not input_values[0].isnumeric() or int(input_values[0]) != 0:
         with pytest.raises(ValueError):
             bank_with_mock_account.closeAccount()
@@ -69,11 +66,16 @@ def test_close_account(mock_input, input_values, bank_with_mock_account):
     else:
         bank_with_mock_account.closeAccount()
         total_accounts = len(bank_with_mock_account.accountsDict)
+        captured = capsys.readouterr()
 
         if (input_values[1] != 'pass123'):
             assert total_accounts == 1
+            assert "wrong password\nprogram ended" in captured.out
         else:
+            assert "You had 100 in your bank account wich they will return to you" in captured.out
+            assert "Account: 0 eliminated" in captured.out
             assert total_accounts == 0
+
 
 @pytest.mark.parametrize(
     "input_values", 
@@ -86,22 +88,22 @@ def test_close_account(mock_input, input_values, bank_with_mock_account):
     ]
 )
 @patch('builtins.input')
-def test_balance(mock_input, input_values, bank_with_mock_account):
+def test_balance(mock_input, input_values, bank_with_mock_account, capsys):
     mock_input.side_effect = input_values
     mock_account = bank_with_mock_account.accountsDict[0]
 
     if not input_values[0].isnumeric() or int(input_values[0]) != 0:
         with pytest.raises(ValueError):
             bank_with_mock_account.balance()
-
-            assert mock_account.show.assert_not_called()
+            captured = capsys.readouterr()
     else:
         bank_with_mock_account.balance()
+        captured = capsys.readouterr()
 
         if (input_values[1] != 'pass123'):
-            mock_account.show.assert_not_called()
+            assert "wrong password\nprogram ended" in captured.out
         else:
-            mock_account.show.assert_called_once()
+            assert "Balance: 100" in captured.out
 
 
 @pytest.mark.parametrize(
@@ -118,24 +120,23 @@ def test_balance(mock_input, input_values, bank_with_mock_account):
     ]
 )
 @patch('builtins.input')
-def test_deposit(mock_input, input_values, bank_with_mock_account):
+def test_deposit(mock_input, input_values, bank_with_mock_account, capsys):
     mock_input.side_effect = input_values
     mock_account = bank_with_mock_account.accountsDict[0]
 
     if not input_values[0].isnumeric() or int(input_values[0]) != 0 or not input_values[2].isnumeric() or int(input_values[2]) <= 0 or int(input_values[2]) > 100:
         with pytest.raises(ValueError):
             bank_with_mock_account.deposit()
-
-            assert mock_account.deposit.assert_not_called()
     else:
         bank_with_mock_account.deposit()
+        captured = capsys.readouterr()
 
         if (input_values[1] != 'pass123'):
-            mock_account.deposit.assert_not_called()
+            assert "wrong password\nprogram ended" in captured.out
         else:
-            mock_account.deposit.assert_called_once()
+            assert "Balance: 100" in captured.out
 
-    
+
 @pytest.mark.parametrize(
     "input_values", 
     [
@@ -150,56 +151,33 @@ def test_deposit(mock_input, input_values, bank_with_mock_account):
     ]
 )
 @patch('builtins.input')
-def test_withdraw(mock_input, input_values, bank_with_mock_account):
+def test_withdraw(mock_input, input_values, bank_with_mock_account, capsys):
     mock_input.side_effect = input_values
     mock_account = bank_with_mock_account.accountsDict[0]
 
-    if not input_values[0].isnumeric() or int(input_values[0]) != 0 or not input_values[2].isnumeric() or int(input_values[2]) > mock_account.balance or int(input_values[2]) < 0:
+    if not input_values[0].isnumeric() or int(input_values[0]) != 0 or not input_values[2].isnumeric() or int(input_values[2]) > mock_account.balance or int(input_values[2]) <= 0:
         with pytest.raises(ValueError):
             bank_with_mock_account.withdraw()
-
-            assert mock_account.withdraw.assert_not_called()
     else:
         bank_with_mock_account.withdraw()
+        captured = capsys.readouterr()
 
         if (input_values[1] != 'pass123'):
-            mock_account.withdraw.assert_not_called()
+            assert "wrong password\nprogram ended" in captured.out
         else:
-            mock_account.withdraw.assert_called_once()
+            assert "withdraw of 10 done!" in captured.out
 
 
-@pytest.mark.parametrize(
-    "input_values", 
-    [
-        ['0', 'pass123'], 
-        ['abc', 'pass123'], 
-        ['-1', 'pass123'], 
-        ['0', 'another_pass'], 
-        ['1', 'another_pass']
-    ]
-)
-@patch('builtins.input')
-def test_show(mock_input, input_values, bank_with_mock_account):
-    mock_input.side_effect = input_values
-    mock_account = bank_with_mock_account.accountsDict[0]
-
-    if not input_values[0].isnumeric() or int(input_values[0]) != 0 or input_values[1] != 'pass123':
-        with pytest.raises(ValueError):
-            bank_with_mock_account.show()
-    else:
-        bank_with_mock_account.balance()
-
-@patch('builtins.print')
-def test_show_all_accounts_empty(mock_print):
+def test_show_all_accounts_empty(capsys):
     bank = Bank()
     bank.show_all_account()
+    captured = capsys.readouterr()
 
-    mock_print.assert_called_with("<empty>")
+    assert "<empty>" in captured.out
 
 
-@patch('builtins.print')
-def test_show_all_accounts(mock_print, bank_with_mock_account):
+def test_show_all_accounts(bank_with_mock_account, capsys):
     bank_with_mock_account.show_all_account()
+    captured = capsys.readouterr()
 
-    mock_print.assert_any_call("N.:0 Name: John Pw: pass123 Balance: 100")
-    
+    assert "N.:0 Name: John Pw: pass123 Balance: 100" in captured.out

@@ -75,7 +75,9 @@ class Bank():
             deposit = input("insert the amount you want deposit: ")
             if (not deposit.isnumeric() or int(deposit) <= 0):
                 raise ValueError("deposit must be positive")
-            self.accountsDict[account_number].deposit(deposit)
+            if (int(deposit) > self.accountsDict[account_number].balance):
+                raise ValueError("Invalid amount")
+            self.accountsDict[account_number].deposit(int(deposit))
             print(f"deposit of {deposit} done!")
         else:
             print("wrong password\nprogram ended")
@@ -91,9 +93,9 @@ class Bank():
         if pw == self.accountsDict[account_number].password:
             print("pw ok!")
             wit = input("insert the withdraw amount: ")
-            if (not wit.isnumeric() or int(wit) > self.accountsDict[account_number].balance):
+            if (not wit.isnumeric() or int(wit) < 0 or int(wit) > self.accountsDict[account_number].balance):
                 raise ValueError("deposit must be smaller than balance")
-            self.accountsDict[account_number].withdraw(wit)
+            self.accountsDict[account_number].withdraw(int(wit))
             print(f"withdraw of {wit} done!")
         else:
             print("wrong password\nprogram ended")
